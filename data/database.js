@@ -3,6 +3,7 @@ const helpers = require('./../helpers');
 
 const dbcreds = {
     host : 'localhost',
+    port : '3306',
     user : 'wwwuser',
     password : 'wwwuser',
     database : 'demo-cms'
