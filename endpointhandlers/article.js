@@ -5,11 +5,66 @@ const qs = require('querystring');
 
 module.exports = {
     'GET' : function(req, res){
+        var cond, values;
         var query = url.parse(req.url).query
         var params = qs.parse(query);
-        var sql = 'select * from articles where category_id = ?';
-        database.articleselect(res, sql, [params.catid], function(data){
+        // console.log(params);
+        // Hvis params.catid, så hent artikler med cat_id
+        // Hvis params.artid, så hent artiklen med artid
+        if(params.catid){
+            cond = 'category_id';
+            values = [params.catid];
+        }
+        if(params.artid){
+            cond = 'id';
+            values = [params.artid];
+        }
+        var sql = `select * from articles where ${cond} = ?`;
+        database.articleselect(res, sql, values, function(data){
             helpers.respond(res, data);
+        });        
+    },
+    
+    'POST' : function(req, res){
+        helpers.getFormData(req, res, function(formData){
+            if(helpers.objEmpty(formData)){
+                helpers.respond(res, {besked : "Der opstod en fejl"}, 500);
+                return;
+            }
+            var sql = 'insert into articles (category_id, title, content) values(?, ?, ?)';
+            var values = [formData.catId, formData.title, formData.article];
+            database.query(res, sql, values, function(data){
+                helpers.respond(res, data);
+            });
         });
-    } 
+    },
+    
+    'PUT' : function(req, res){
+        helpers.getFormData(req, res, function(formData){
+            if(helpers.objEmpty(formData)){
+                helpers.respond(res, {besked : "Der opstod en fejl"}, 500);
+                return;
+            }
+            var sql = 'update articles set category_id = ?, title = ?, content = ? where id = ?';
+            var values = [formData.catId, formData.title, formData.article, formData.artid];
+            database.query(res, sql, values, function(data){
+                helpers.respond(res, data);
+            });
+        });
+    },    
+    
+    'DELETE' : function(req, res){
+        helpers.getFormData(req, res, function(formData){
+            console.log(formData); 
+            if(helpers.objEmpty(formData)){
+                helpers.respond(res, {besked : "Der opstod en fejl"}, 500);
+                return;
+            }
+            var sql = 'delete from articles where id = ?';
+            var values = [formData.id];
+            database.query(res, sql, values, function(data){
+                helpers.respond(res, data);
+            });
+        });
+    }
 };

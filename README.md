@@ -14,7 +14,7 @@
 
 ### Indledningsvis vil vi starte med at demonstrere et simpelt API
 
-#### Et meget simpelt API der viser hvordan routes kan opbygges i node.js (næsten) uden brug af 3. parts moduler.
+#### Et meget simpelt API der viser hvordan routes kan opbygges i node.js.
 
 Dvs. dette eksempel benytter sig udelukkende af moduler der er en del af node.js installationen. Derfor er der ikke behov for at installere 3. parts moduler. Jeg vil dog anbefale at _nodemon_ modulet installeres. 
 
@@ -83,7 +83,7 @@ Kigger vi på vores endpointhandlere ser vi, at de to funktioner ligner hinanden
 
 Derfor vil jeg ændre koden lidt. Først opretter jeg en ny mappe, `endpointhandlers`. I denne mappe vil jeg oprette to filer, `cat.js` og `dog.js`.
 
-I det to filer placeres funktionerne for henholdsvis `/cat` og `/dog` routene.
+I de to filer placeres funktionerne for henholdsvis `/cat` og `/dog` routene.
 
 endpointhandlers/cat.js
 ```javascript
@@ -103,7 +103,7 @@ module.exports = function(res) {
 ```
 
 Vi har nu fået adskilt selve endpointhandlerne fra `routes.js`, men stadig har vi to handlere der har en del til fælles.
-Næste skridt vil være at oprette endnu en fil som jeg vil kalde `helpers.js`. Denne fil er tænkt til at indeholde hjælpefunktioner. I dette eksempel vil der dog kun være en enkelt hjælpefunktion, eller rettere sagt metode, nemlig `.respond()`. Tanken er at denne metode skal indeholde den kode der er fælles for endpointhandlerne. Koden for `respond()` metoden skal se sådan ud:
+Næste skridt vil være at oprette endnu en fil som jeg vil kalde `helpers.js`. Denne fil er tænkt til at indeholde hjælpefunktioner. I dette eksempel vil der til at starte med kun være en enkelt hjælpefunktion, eller rettere sagt metode, nemlig `respond()`. Tanken er at denne metode skal indeholde den kode der er fælles for endpointhandlerne. Koden for `respond()` metoden skal se sådan ud:
 
 
 helpers.js
@@ -182,7 +182,7 @@ module.exports = {
 };
 ```
 
-Men for at få den ændrede kode til at virke, er det nødvendigt at ændre i `router` modulet.
+Men for at få den ændrede kode til at virke, er det også nødvendigt at ændre i `router` modulet.
 
 Koden i dette modul ændres så den ser sådan ud:
 
@@ -205,9 +205,12 @@ module.exports = function(req, res){
     if(handler){
         var action = handler[req.method];
         if(action){
+            // Hvis vi er her er der fundet både en matchende route og metode.
             action(res);
             return;
         }
+        
+        // Hvis vi er her er der fundet en route, men der er ikke fundet en metode der er understøttet.
         helpers.respond(res, `Status: 404. Metode '${req.method}' ikke understøttet.`, 404);
         return;
     }
@@ -223,13 +226,13 @@ Vi har nu et simpelt API der er i stand til at svare på både `GET` og `POST` r
 
 Vores API kan ikke levere statiske filer. Det får vi brug for, så vi skal til at lave de nødvendige tilføjelser til koden for at det kan lade sig gøre. 
 
-Vi skal tilføje en hjælpefunktion til vores `helpers.js`. Funktionen skal kunne læse en fil fra filsystemet og sende indholdet i filen til en browser ved hjælp af `response` objektet. Derfor får vi brug for filsystem-modulet `fs`. 
+Vi skal tilføje en hjælpefunktion til vores `helpers.js`. Funktionen skal kunne læse en fil fra filsystemet og sende indholdet i filen til en browser. Derfor får vi brug for filsystem-modulet `fs`. Modulet er en del af Node installationen og skal ikke installeres.
 
-Vi får også brug for at kunne detektere hvilken mimetype vi har med at gøre. Vi skal derfor oprette et objekt til at indholde definitionerne på de mimetyper vi ønsker at kunne håndtere.
+Vi får også brug for at kunne bestemme hvilken mimetype vi har med at gøre. Vi skal derfor oprette et objekt til at indholde definitionerne på de mimetyper vi ønsker at kunne håndtere.
 
-Vi opretter et json-objekt i `helpers` filen. Objektet indeholder en række navn/værdi par, hvor navnene svarer til ekstensionen på de filer vi ønsker at håndtere, og værdierne svarer til mimetyperne.
+Vi opretter et objekt i `helpers.js` filen. Objektet indeholder en række navn/værdi par, hvor navnene svarer til ekstensionen på de filertyper vi ønsker at kunne håndtere, og værdierne svarer til mimetyperne.
 
-Koden for mimetype-objektet.
+Koden der skal tilføjes til `helpers.js`.
 ```javascript
 const fs = require('fs');  // Importer filsystem-modulet
 const path = require('path');
@@ -244,11 +247,9 @@ const mimetypes = {
 
 ```
 
-Vi får også brug for en funktion der kan læse filer fra serverens filsystem. Derfor får vi brug for at importere filsystem modulet `fs` der også er en del af node installationen.
+Vi får også brug for en funktion der kan læse filer fra serverens filsystem. 
 
-Det gør vi i starten af filen `helpers.js` med denne linje `var fs = require('fs');` 
-
-Koden til funktionen der skal læse en fil fra filsystemet sende den til browseren placeres også i `helpers.js` 
+Koden til denne funktionen der læser fra filsystemet sender til browseren placeres også i `helpers.js` 
 
 Her er koden
 ```javascript
@@ -753,16 +754,16 @@ exports.getCookies = function(req){
             var name = decodeURI(cp.split('=')[0].trim());
             var value = decodeURI(cp.split('=')[1].trim());
             cookies[name] = value;
-        })
+        });
     }
     return cookies;
-}
+};
 
 
 exports.redirect = function(res, url){
     res.writeHead(302, {'location': url});
     res.end();
-}
+};
 
 exports.getFormData = function(req, res, callback){
     var form = new multiparty.Form();
@@ -775,17 +776,6 @@ exports.getFormData = function(req, res, callback){
         callback(fields, files);
     });
 };
-
-    var userData = '';
-    var formData;
-    req.on('data', function(d){
-        userData += d;
-    });
-    req.on('end', function(){
-        formData = qs.parse(userData);
-        callback(formData);
-    });
-}
 ```
 Mens man udvikler er det en god hjælp, at alle indkommende requests udskrives på server terminalen. Derfor har jeg tilføjet et modul, `logger`, i filem `logger.js`. Modulet udskriver forskellige informationer til konsollen. Det er muligt at styre hvilke informationer der logges ved hjælp af parameteren `level` der defaulter til 3
 
@@ -807,5 +797,22 @@ module.exports = function(req, level = 3){
     console.log(logTxt);
 }
 ```
+Logger.js skal så importeres i `router.js`. Logger funktionen kan så kaldes som det første funktionskald i `router.js`.
+
+Eksempel uddrag fra `router.js`
+```
+// Importer logger
+const logger = require('./logger');
+
+// Denne funktion er arbejdshesten. Den kaldes hver gang serveren modtager en request fra en client
+module.exports = function(req, res){
+    // Funktionskald til logger() i starten af router-functionen.
+    logger(req, 4);
+    // -- slut på uddrag
+
+```
+
+
+
 
 Fortsættes...
