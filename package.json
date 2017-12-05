@@ -13,6 +13,6 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon server.js"
   },
-  "author": "psl@rts.dk",
+  "author": "timm jensen",
   "license": "ISC"
 }
